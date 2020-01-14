@@ -135,6 +135,8 @@ def main():
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
     command_list.extend(["--config samples=%s" %dict_string, "basecalled_path=%s" %config["basecalledPath"]])
+    if pipeline_dict["config"] is not None:
+        command_list.append(pipeline_dict["config"])
     command_list.extend(args.remainder)
     command = ' '.join(command_list)
     print(command)
