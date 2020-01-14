@@ -131,7 +131,7 @@ def main():
     sample_dict = update_sample_dict_with_csv(args.csv, sample_dict)
     dict_string = sample_dict_to_dict_string(sample_dict)
 
-    command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", args.threads]
+    command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(args.threads)]
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
     command_list.extend(["--config samples=%s" %dict_string, "basecalled_path=%s" %config["basecalledPath"]])
