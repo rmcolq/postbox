@@ -70,6 +70,8 @@ def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
                 'Error: %s does not exist. Does the protocols directory have the correct format?' % snakemake)
 
         pipeline_dict["path"] = snakemake
+        if "config_file" in pipeline_dict:
+            pipeline_dict["config_file"] = pipeline_dict["path"].replace("Snakefile", pipeline_dict["config_file"])
 
     return pipeline_dict
 
