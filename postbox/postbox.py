@@ -25,6 +25,7 @@ def get_arguments():
     run_group = parser.add_argument_group('Run configuration options')
     run_group.add_argument('-r', '--run_configuration', dest='run_configuration', default='./run_configuration.json')
     run_group.add_argument('-c', '--csv', dest='csv', default='./barcodes.csv')
+    run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int)
 
     run_group.add_argument('remainder', nargs=argparse.REMAINDER)
 
@@ -130,7 +131,7 @@ def main():
     sample_dict = update_sample_dict_with_csv(args.csv, sample_dict)
     dict_string = sample_dict_to_dict_string(sample_dict)
 
-    command_list = ['snakemake', '--snakefile', pipeline_dict["path"]]
+    command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", args.threads]
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
     command_list.extend(["--config samples=%s" %dict_string, "basecalled_path=%s" %config["basecalledPath"]])
