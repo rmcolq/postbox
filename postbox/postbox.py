@@ -20,14 +20,21 @@ def get_arguments():
     main_group.add_argument('-p', '--protocol', dest='protocol', required=True,
                             help='Path to RAMPART protocol directory')
     main_group.add_argument('-q', '--pipeline', dest='pipeline', default=None,
-                            help='Name of pipeline to run')
+                            help='Name of pipeline to run. If there is only one pipeline \
+                            in the protocol directory, this parameter is optional')
 
     run_group = parser.add_argument_group('Run configuration options')
-    run_group.add_argument('-r', '--run_configuration', dest='run_configuration', default='./run_configuration.json')
-    run_group.add_argument('-c', '--csv', dest='csv', default='./barcodes.csv')
-    run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int)
+    run_group.add_argument('-r', '--run_configuration', dest='run_configuration', default='./run_configuration.json',
+                          help='Path to the run_configuration.json file if it is not in current working directory')
+    run_group.add_argument('-c', '--csv', dest='csv', default='./barcodes.csv',
+                          help='Path to the CSV file containing a samples and barcodes column if this information is \
+                          not provided in the run_configuration.json file. Updates the run_configuration information if \
+                           both are provided')
+    run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
+                          help='Number of cores to run snakemake with')
 
-    run_group.add_argument('remainder', nargs=argparse.REMAINDER)
+    run_group.add_argument('remainder', nargs=argparse.REMAINDER,
+                          help='String of key=value pairs to override snakemake config parameters with')
 
     args = parser.parse_args()
 
