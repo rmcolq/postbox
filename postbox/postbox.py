@@ -42,8 +42,8 @@ def get_arguments():
     args = parser.parse_args()
 
     # strip trailing / from paths
-    args.protocol.rstrip("/")
-    args.run_directory.rstrip("/")
+    args.protocol = args.protocol.rstrip("/")
+    args.run_directory = args.run_directory.rstrip("/")
 
     # dummy handle if the run_configuration or barcodes csv are given as absolute paths
     if args.run_configuration.startswith("/") and args.csv.startswith("/"):
