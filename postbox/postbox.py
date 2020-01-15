@@ -29,7 +29,7 @@ def get_arguments():
                            help='Path to the directory for this run if it is not in current working directory')
     run_group.add_argument('-r', '--run_configuration', dest='run_configuration', default='run_configuration.json',
                           help='Path to the run_configuration.json file relative to the run directory')
-    run_group.add_argument('-c', '--csv', dest='csv', default='./barcodes.csv',
+    run_group.add_argument('-c', '--csv', dest='csv', default='barcodes.csv',
                           help='Path to the CSV file containing a samples and barcodes column if this information is \
                           not provided in the run_configuration.json file. Path should be relative to the run \
                           directory. Updates the run_configuration information if both are provided')
@@ -40,6 +40,20 @@ def get_arguments():
                           help='String of key=value pairs to override snakemake config parameters with')
 
     args = parser.parse_args()
+
+    # strip trailing / from paths
+    args.protocol.rstrip("/")
+    args.run_directory.rstrip("/")
+
+    # dummy handle if the run_configuration or barcodes csv are given as absolute paths
+    if args.run_configuration.startswith("/") and args.csv.startswith("/"):
+        args.run_directory = ""
+    elif args.run_configuration.startswith("/"):
+        args.csv = "%s/%s" %(args.run_directory, args.csv)
+        args.run_directory = ""
+    elif args.csv.startswith("/"):
+        args.run_configuration = "%s/%s" % (args.run_directory, args.run_configuration)
+        args.run_directory = ""
 
     return args
 
@@ -147,7 +161,7 @@ def main():
     command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(args.threads)]
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
-    command_list.extend(["--config samples=%s" %dict_string, "basecalled_path=%s" %config["basecalledPath"]])
+    command_list.extend(["--config samples=%s" %dict_string, "basecalled_path=\"%s\"" %config["basecalledPath"]])
     if pipeline_dict["config"] is not None:
         command_list.append(pipeline_dict["config"])
     command_list.extend(args.remainder)
