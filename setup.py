@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="postbox",
-    version="0.0.0",
+    version="0.3",
     packages=find_packages(),
     url="https://github.com/rmcolq/postbox",
     license="MIT",
