@@ -65,7 +65,7 @@ def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
 
         assert "path" in pipelines[pipeline_name]
         snakemake += pipelines[pipeline_name]["path"] + "/Snakefile"
-        print(snakemake)
+        #print(snakemake)
         if not os.path.exists(snakemake):
             sys.exit(
                 'Error: %s does not exist. Does the protocols directory have the correct format?' % snakemake)
@@ -83,13 +83,13 @@ def load_run_configuration(run_configuration):
             '--run_configuration parameter' %run_configuration)
     with open(run_configuration) as json_file:
         config = json.load(json_file)
-        print(config)
+        #print(config)
 
     sample_dict = {}
     if "samples" in config:
         for sample in config["samples"]:
             sample_dict[sample["name"]] = sample["barcodes"]
-    print(sample_dict)
+    #print(sample_dict)
     return config, sample_dict
 
 def csv_to_sample_dict(csv_file):
@@ -101,7 +101,7 @@ def csv_to_sample_dict(csv_file):
         if sample not in sample_dict:
             sample_dict[sample] = []
         sample_dict[sample].append(barcode)
-    print(sample_dict)
+    #print(sample_dict)
     return sample_dict
 
 def update_sample_dict_with_csv(csv_file, sample_dict):
@@ -112,7 +112,7 @@ def update_sample_dict_with_csv(csv_file, sample_dict):
 def sample_dict_to_dict_string(sample_dict):
     sample_strings = ["%s: [%s]" %(sample, ",".join(sample_dict[sample])) for sample in sample_dict]
     dict_string = "'{%s}'" %", ".join(sample_strings)
-    print(dict_string)
+    #print(dict_string)
     return dict_string
 
 def main():
@@ -125,7 +125,7 @@ def main():
         "options": None
     }
     pipeline_dict = find_pipeline(args.protocol, args.pipeline, pipeline_dict)
-    print(pipeline_dict)
+    #print(pipeline_dict)
 
     config, sample_dict = load_run_configuration(args.run_configuration)
     sample_dict = update_sample_dict_with_csv(args.csv, sample_dict)
@@ -139,8 +139,8 @@ def main():
         command_list.append(pipeline_dict["config"])
     command_list.extend(args.remainder)
     command = ' '.join(command_list)
-    print(command)
-    #syscall(command)
+    #print(command)
+    syscall(command)
 
 if __name__ == '__main__':
     main()
