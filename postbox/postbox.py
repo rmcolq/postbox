@@ -14,7 +14,8 @@ def get_arguments():
     '''
     Parse the command line arguments.
     '''
-    parser = argparse.ArgumentParser(description='Parses CSV output by RAMPART and runs analysis step on all barcoded samples')
+    parser = argparse.ArgumentParser(description='Parses CSV output by RAMPART and runs analysis step on all barcoded \
+                                                  samples')
 
     main_group = parser.add_argument_group('Main options')
     main_group.add_argument('-p', '--protocol', dest='protocol', required=True,
@@ -24,12 +25,14 @@ def get_arguments():
                             in the protocol directory, this parameter is optional')
 
     run_group = parser.add_argument_group('Run configuration options')
-    run_group.add_argument('-r', '--run_configuration', dest='run_configuration', default='./run_configuration.json',
-                          help='Path to the run_configuration.json file if it is not in current working directory')
+    run_group.add_argument('-d', '--run_directory', dest='run_directory', default='./',
+                           help='Path to the directory for this run if it is not in current working directory')
+    run_group.add_argument('-r', '--run_configuration', dest='run_configuration', default='run_configuration.json',
+                          help='Path to the run_configuration.json file relative to the run directory')
     run_group.add_argument('-c', '--csv', dest='csv', default='./barcodes.csv',
                           help='Path to the CSV file containing a samples and barcodes column if this information is \
-                          not provided in the run_configuration.json file. Updates the run_configuration information if \
-                           both are provided')
+                          not provided in the run_configuration.json file. Path should be relative to the run \
+                          directory. Updates the run_configuration information if both are provided')
     run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
                           help='Number of cores to run snakemake with')
 
@@ -83,12 +86,14 @@ def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
 
     return pipeline_dict
 
-def load_run_configuration(run_configuration):
-    if not os.path.exists(run_configuration):
+def load_run_configuration(run_directory, run_configuration):
+    run_configuration_path = "%s/%s" % (run_directory, run_configuration)
+    if not os.path.exists(run_configuration_path):
         sys.exit(
-            'Error: %s does not exist. If not in current working directory, please specify the filepath with '
-            '--run_configuration parameter' %run_configuration)
-    with open(run_configuration) as json_file:
+            'Error: %s does not exist. If run directory is not in current working directory, please specify the '
+            'path with --run_directory. If the configuration JSON file has a different name to run_configuration.json'
+            'specify it relative to the run directory with --run_configuration parameter' %run_configuration_path)
+    with open(run_configuration_path) as json_file:
         config = json.load(json_file)
         #print(config)
 
@@ -111,9 +116,10 @@ def csv_to_sample_dict(csv_file):
     #print(sample_dict)
     return sample_dict
 
-def update_sample_dict_with_csv(csv_file, sample_dict):
-    if os.path.exists(csv_file):
-        sample_dict = csv_to_sample_dict(csv_file)
+def update_sample_dict_with_csv(run_directory, csv_file, sample_dict):
+    csv_path = "%s/%s" % (run_directory, csv_file)
+    if os.path.exists(csv_path):
+        sample_dict = csv_to_sample_dict(csv_path)
     return sample_dict
 
 def sample_dict_to_dict_string(sample_dict):
@@ -134,8 +140,8 @@ def main():
     pipeline_dict = find_pipeline(args.protocol, args.pipeline, pipeline_dict)
     #print(pipeline_dict)
 
-    config, sample_dict = load_run_configuration(args.run_configuration)
-    sample_dict = update_sample_dict_with_csv(args.csv, sample_dict)
+    config, sample_dict = load_run_configuration(args.run_directory, args.run_configuration)
+    sample_dict = update_sample_dict_with_csv(args.run_directory, args.csv, sample_dict)
     dict_string = sample_dict_to_dict_string(sample_dict)
 
     command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(args.threads)]
