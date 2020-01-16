@@ -66,11 +66,11 @@ def syscall(command, allow_fail=False):
 
     # Poll process.stdout to show stdout live
     while True:
-        output = process.stdout.readline()
+        output = process.stdout.readline().rstrip()
         if process.poll() is not None:
             break
         if output:
-            print(output.strip("\n"))
+            print(output)
     return_code = process.poll()
 
     if (not allow_fail) and return_code != 0:
