@@ -60,15 +60,24 @@ def get_arguments():
 
 def syscall(command, allow_fail=False):
     print(command)
-    completed_process = subprocess.run(command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-    if (not allow_fail) and completed_process.returncode != 0:
+
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               universal_newlines=True)
+
+    # Poll process.stdout to show stdout live
+    while True:
+        output = process.stdout.readline()
+        if process.poll() is not None:
+            break
+        if output:
+            print(output.strip("\n"))
+    return_code = process.poll()
+
+    if (not allow_fail) and return_code != 0:
         print('Error running this command:', command, file=sys.stderr)
-        print('Return code:', completed_process.returncode, file=sys.stderr)
-        print('\nOutput from stdout:', completed_process.stdout, sep='\n', file=sys.stderr)
-        print('\nOutput from stderr:', completed_process.stderr, sep='\n', file=sys.stderr)
+        print('Return code:', return_code, file=sys.stderr)
         raise Error('Error in system call. Cannot continue')
-    print(completed_process.stdout)
-    return completed_process
+    return process
 
 def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
     pipeline_json = protocol_path + "/rampart/pipelines.json"
@@ -174,7 +183,6 @@ def main():
         command_list.append(pipeline_dict["config"])
     command_list.extend(args.remainder)
     command = ' '.join(command_list)
-    #print(command)
     syscall(command)
 
 if __name__ == '__main__':
