@@ -122,8 +122,15 @@ def csv_to_sample_dict(csv_file):
     csv = pd.read_csv(csv_file)
     sample_dict = {}
 
+    sample_column_names = [s for s in ['samples', 'sample'] if s in csv.columns.values]
+    barcode_column_names = [s for s in ['barcodes', 'barcode'] if s in csv.columns.values]
+    if len(sample_column_names) < 1:
+        sys.exit("Error: barcodes CSV file does not have a column header for sample/samples")
+    if len(barcode_column_names) < 1:
+        sys.exit("Error: barcodes CSV file does not have a column header for barcode/barcodes")
+
     for i,row in csv.iterrows():
-        sample, barcode = row['samples'], row['barcodes']
+        sample, barcode = row[sample_column_names[0]], row[barcode_column_names[0]]
         if sample not in sample_dict:
             sample_dict[sample] = []
         sample_dict[sample].append(barcode)
