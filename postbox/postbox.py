@@ -33,6 +33,10 @@ def get_arguments():
                           help='Path to the CSV file containing a samples and barcodes column if this information is \
                           not provided in the run_configuration.json file. Path should be relative to the run \
                           directory. Updates the run_configuration information if both are provided')
+    run_group.add_argument('-i', '--basecalledPath', dest='basecalled_path', default=None,
+                           help='Path to the basecalled directory if this information is \
+                              not provided in the run_configuration.json file. Path should be relative to the run \
+                              directory. Updates the run_configuration information if both are provided')
     run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
                           help='Number of cores to run snakemake with')
 
@@ -46,14 +50,14 @@ def get_arguments():
     args.run_directory = args.run_directory.rstrip("/")
 
     # dummy handle if the run_configuration or barcodes csv are given as absolute paths
-    if args.run_configuration.startswith("/") and args.csv.startswith("/"):
-        args.run_directory = ""
-    elif args.run_configuration.startswith("/"):
-        args.csv = "%s/%s" %(args.run_directory, args.csv)
-        args.run_directory = ""
-    elif args.csv.startswith("/"):
+    if not args.run_directory.startswith("/"):
+        args.run_directory = os.path.abspath(args.run_directory)
+
+    if not args.run_configuration.startswith("/"):
         args.run_configuration = "%s/%s" % (args.run_directory, args.run_configuration)
-        args.run_directory = ""
+
+    if not args.csv.startswith("/"):
+        args.csv = "%s/%s" % (args.run_directory, args.csv)
 
     return args
 
@@ -109,18 +113,15 @@ def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
 
     return pipeline_dict
 
-def load_run_configuration(run_directory, run_configuration):
-    run_configuration_path = "%s/%s" % (run_directory, run_configuration)
+def load_run_configuration(run_configuration_path):
+    config = {}
+    sample_dict = {}
     if not os.path.exists(run_configuration_path):
-        sys.exit(
-            'Error: %s does not exist. If run directory is not in current working directory, please specify the '
-            'path with --run_directory. If the configuration JSON file has a different name to run_configuration.json'
-            'specify it relative to the run directory with --run_configuration parameter' %run_configuration_path)
+        return config, sample_dict
     with open(run_configuration_path) as json_file:
         config = json.load(json_file)
         #print(config)
 
-    sample_dict = {}
     if "samples" in config:
         for sample in config["samples"]:
             sample_dict[sample["name"]] = sample["barcodes"]
@@ -146,11 +147,36 @@ def csv_to_sample_dict(csv_file):
     #print(sample_dict)
     return sample_dict
 
-def update_sample_dict_with_csv(run_directory, csv_file, sample_dict):
-    csv_path = "%s/%s" % (run_directory, csv_file)
+def update_sample_dict_with_csv(csv_path, sample_dict):
     if os.path.exists(csv_path):
         sample_dict = csv_to_sample_dict(csv_path)
+
+    if sample_dict == {}:
+        sys.exit(
+            'Error: no valid sample to barcode map given. This should be provided either in the run configuration JSON '
+            'or in a CSV file specified with the --csv parameter, and either given as an absolute path or relative to'
+            'the run directory.')
+
     return sample_dict
+
+def update_config_with_basecalled_path(run_directory, config, basecalled_path):
+    if "basecalledPath" not in config:
+        config["basecalledPath"] = None
+    elif not config["basecalledPath"].startswith("/"):
+            config["basecalledPath"] = "%s/%s" %(run_directory, config["basecalledPath"])
+
+    if basecalled_path is not None:
+        if not basecalled_path.startswith("/"):
+            basecalled_path = "%s/%s" %(run_directory, basecalled_path)
+        config["basecalledPath"] = basecalled_path
+
+    if config["basecalledPath"] is None or not os.path.exists(basecalled_path):
+        sys.exit(
+            'Error: no valid basecalledPath given. This should be provided either in the run configuration JSON or'
+            'using the --basecalledPath parameter. It should be specified either as an absolute path or relative to'
+            'the run directory.')
+
+    return config
 
 def sample_dict_to_dict_string(sample_dict):
     sample_strings = ["%s: [%s]" %(sample, ",".join(sample_dict[sample])) for sample in sample_dict]
@@ -171,7 +197,8 @@ def main():
     #print(pipeline_dict)
 
     config, sample_dict = load_run_configuration(args.run_directory, args.run_configuration)
-    sample_dict = update_sample_dict_with_csv(args.run_directory, args.csv, sample_dict)
+    config = update_config_with_basecalled_path(args.run_directory, config, args.basecalled_path)
+    sample_dict = update_sample_dict_with_csv(args.csv, sample_dict)
     dict_string = sample_dict_to_dict_string(sample_dict)
 
     command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(args.threads),
