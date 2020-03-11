@@ -1,0 +1,27 @@
+{
+  "title": "MinION_Run_Example",
+  "basecalledPath": "./fastq_pass/",
+
+  "samples": [
+    {
+      "name": "North",
+      "description": "",
+      "barcodes": [ "NB03" ]
+    },
+    {
+      "name": "East",
+      "description": "",
+      "barcodes": [ "NB04" ]
+    },
+    {
+      "name": "South",
+      "description": "",
+      "barcodes": [ "NB05", "NB07" ]
+    },
+    {
+      "name": "Control",
+      "description": "",
+      "barcodes": [ "NB06" ]
+    }
+  ]
+}

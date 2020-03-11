@@ -39,6 +39,8 @@ def get_arguments():
                               directory. Updates the run_configuration information if both are provided')
     run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
                           help='Number of cores to run snakemake with')
+    run_group.add_argument('-n', '--dry_run', dest='dry_run', default=False,
+                           help='Make this a snakemake dry run')
 
     run_group.add_argument('remainder', nargs=argparse.REMAINDER,
                           help='String of key=value pairs to override snakemake config parameters with')
@@ -84,6 +86,10 @@ def syscall(command, allow_fail=False):
     return process
 
 def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
+    if not os.path.exists(protocol_path):
+        sys.exit(
+            'Error: Protocol path %s does not exist.' %protocol_path)
+
     pipeline_json = protocol_path + "/rampart/pipelines.json"
     if not os.path.exists(pipeline_json):
         sys.exit(
@@ -100,8 +106,9 @@ def find_pipeline(protocol_path, pipeline_name, pipeline_dict):
         assert pipeline_name in pipelines
         pipeline_dict.update(pipelines[pipeline_name])
 
-        assert "path" in pipelines[pipeline_name]
-        snakemake += pipelines[pipeline_name]["path"] + "/Snakefile"
+        if "path" in pipelines[pipeline_name]:
+            snakemake += pipelines[pipeline_name]["path"] + "/"
+        snakemake += "Snakefile"
         #print(snakemake)
         if not os.path.exists(snakemake):
             sys.exit(
@@ -125,6 +132,7 @@ def load_run_configuration(run_configuration_path):
     if "samples" in config:
         for sample in config["samples"]:
             sample_dict[sample["name"]] = sample["barcodes"]
+        del config["samples"]
     #print(sample_dict)
     return config, sample_dict
 
@@ -132,8 +140,8 @@ def csv_to_sample_dict(csv_file):
     csv = pd.read_csv(csv_file)
     sample_dict = {}
 
-    sample_column_names = [s for s in ['samples', 'sample'] if s in csv.columns.values]
-    barcode_column_names = [s for s in ['barcodes', 'barcode'] if s in csv.columns.values]
+    sample_column_names = [s for s in ['samples', 'sample', 'Samples', 'Sample', 'SAMPLES', 'SAMPLE'] if s in csv.columns.values]
+    barcode_column_names = [s for s in ['barcodes', 'barcode', 'Barcodes', 'Barcode', 'BARCODES', 'BARCODE'] if s in csv.columns.values]
     if len(sample_column_names) < 1:
         sys.exit("Error: barcodes CSV file does not have a column header for sample/samples")
     if len(barcode_column_names) < 1:
@@ -184,32 +192,41 @@ def sample_dict_to_dict_string(sample_dict):
     #print(dict_string)
     return dict_string
 
-def main():
-    args = get_arguments()
-
+def generate_command(protocol, pipeline, run_directory, run_configuration, basecalled_path, csv, threads, remainder,
+                     dry_run=False):
     pipeline_dict = {
         "path": None,
         "config": None,
         "config_file": None,
         "options": None
     }
-    pipeline_dict = find_pipeline(args.protocol, args.pipeline, pipeline_dict)
-    #print(pipeline_dict)
+    pipeline_dict = find_pipeline(protocol, pipeline, pipeline_dict)
+    # print(pipeline_dict)
 
-    config, sample_dict = load_run_configuration(args.run_directory, args.run_configuration)
-    config = update_config_with_basecalled_path(args.run_directory, config, args.basecalled_path)
-    sample_dict = update_sample_dict_with_csv(args.csv, sample_dict)
+    config, sample_dict = load_run_configuration(run_configuration)
+    config = update_config_with_basecalled_path(run_directory, config, basecalled_path)
+    sample_dict = update_sample_dict_with_csv(csv, sample_dict)
     dict_string = sample_dict_to_dict_string(sample_dict)
 
-    command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(args.threads),
+    command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(threads),
                     "--rerun-incomplete", "--nolock"]
+    if dry_run:
+        command_list.append("--dry_run")
+
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
-    command_list.extend(["--config samples=%s" %dict_string, "basecalled_path=\"%s\"" %config["basecalledPath"]])
+    command_list.extend(["--config samples=%s" % dict_string, "basecalled_path=\"%s\"" % config["basecalledPath"]])
     if pipeline_dict["config"] is not None:
         command_list.append(pipeline_dict["config"])
-    command_list.extend(args.remainder)
+    command_list.extend(remainder)
     command = ' '.join(command_list)
+    return command
+
+def main():
+    args = get_arguments()
+
+    command = generate_command(args.protocol, args.pipeline, args.run_directory, args.run_configuration,
+                               args.basecalled_path, args.csv, args.threads, args.remainder. args.dry_run)
     syscall(command)
 
 if __name__ == '__main__':
