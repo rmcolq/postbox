@@ -39,7 +39,7 @@ def get_arguments():
                               directory. Updates the run_configuration information if both are provided')
     run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
                           help='Number of cores to run snakemake with')
-    run_group.add_argument('-n', '--dry_run', dest='dry_run', default=False,
+    run_group.add_argument('-n', '--dry_run', dest='dry_run', action="store_true",
                            help='Make this a snakemake dry run')
 
     run_group.add_argument('remainder', nargs=argparse.REMAINDER,
@@ -223,7 +223,7 @@ def generate_command(protocol, pipeline, run_directory, run_configuration, basec
     command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(threads),
                     "--rerun-incomplete", "--nolock"]
     if dry_run:
-        command_list.append("--dry_run")
+        command_list.append("--dry-run")
 
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
@@ -238,7 +238,7 @@ def main():
     args = get_arguments()
 
     command = generate_command(args.protocol, args.pipeline, args.run_directory, args.run_configuration,
-                               args.basecalled_path, args.csv, args.threads, args.remainder. args.dry_run)
+                               args.basecalled_path, args.csv, args.threads, args.remainder, args.dry_run)
     syscall(command)
 
 if __name__ == '__main__':
