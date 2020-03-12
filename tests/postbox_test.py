@@ -227,20 +227,22 @@ class TestPostbox(unittest.TestCase):
         sample_string = sample_dict_to_dict_string(sample_dict)
         self.assertEqual(sample_string, expected)
 
-    # def test_generate_command(self):
-    #     protocol = "%s/example_protocol" %data_dir
-    #     pipeline = "analysis"
-    #     run_directory = "%s/example_run_directory" %data_dir
-    #     run_configuration = "run_configuration.json"
-    #     basecalled_path = None
-    #     csv = "barcodes.csv"
-    #     threads = 1
-    #     remainder = ""
-    #     dry_run = False
-    #
-    #     command = generate_command(protocol, pipeline, run_directory, run_configuration, basecalled_path, csv, threads,
-    #                                remainder, dry_run)
-    #     expected = ""
-    #     self.assertEqual(command, expected)
+    def test_generate_command(self):
+        protocol = "%s/example_protocol" %data_dir
+        pipeline = "analysis"
+        run_directory = "%s/example_run_directory" %data_dir
+        run_configuration = "run_configuration.json"
+        basecalled_path = "%s/example_run_directory/fastq_pass" %data_dir
+        csv = "%s/example_run_directory/barcodes.csv" %data_dir
+        threads = 1
+        remainder = ""
+        dry_run = False
+
+        command = generate_command(protocol, pipeline, run_directory, run_configuration, basecalled_path, csv, threads,
+                                   remainder, dry_run)
+        expected = "snakemake --snakefile %s/example_protocol/rampart/pipelines/analyse_samples/Snakefile --cores 1 --rerun-incomplete --nolock --configfile %s/example_protocol/rampart/pipelines/analyse_samples/config.yaml --config samples='{North: [BC01], East: [BC02], South: [BC03], West: [BC04], Control: [BC05]}' basecalled_path=\"%s/example_run_directory/fastq_pass\"  min_reads=50 min_pcent=0.01" %(data_dir, data_dir, data_dir)
+        print(expected)
+        print(command)
+        self.assertEqual(command, expected)
 
 

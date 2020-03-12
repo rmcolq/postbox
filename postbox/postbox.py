@@ -33,7 +33,7 @@ def get_arguments():
                           help='Path to the CSV file containing a samples and barcodes column if this information is \
                           not provided in the run_configuration.json file. Path should be relative to the run \
                           directory. Updates the run_configuration information if both are provided')
-    run_group.add_argument('-i', '--basecalledPath', dest='basecalled_path', default=None,
+    run_group.add_argument('-i', '--basecalled_path', dest='basecalled_path', default=None,
                            help='Path to the basecalled directory if this information is \
                               not provided in the run_configuration.json file. Path should be relative to the run \
                               directory. Updates the run_configuration information if both are provided')
@@ -54,12 +54,15 @@ def get_arguments():
     # dummy handle if the run_configuration or barcodes csv are given as absolute paths
     if not args.run_directory.startswith("/"):
         args.run_directory = os.path.abspath(args.run_directory)
+        print("Using run directory %s" %args.run_directory)
 
     if not args.run_configuration.startswith("/"):
         args.run_configuration = "%s/%s" % (args.run_directory, args.run_configuration)
+        print("Using run configuration %s" % args.run_configuration)
 
     if not args.csv.startswith("/"):
         args.csv = "%s/%s" % (args.run_directory, args.csv)
+        print("Using csv %s" % args.csv)
 
     return args
 
@@ -124,6 +127,7 @@ def load_run_configuration(run_configuration_path):
     config = {}
     sample_dict = {}
     if not os.path.exists(run_configuration_path):
+        print("No run configuration JSON at %s" %run_configuration_path)
         return config, sample_dict
     with open(run_configuration_path) as json_file:
         config = json.load(json_file)
@@ -156,7 +160,9 @@ def csv_to_sample_dict(csv_file):
     return sample_dict
 
 def update_sample_dict_with_csv(csv_path, sample_dict):
+    #print("Looking for barcodes CSV at %s?" %csv_path)
     if os.path.exists(csv_path):
+        print("Update sample_dict with %s" %csv_path)
         sample_dict = csv_to_sample_dict(csv_path)
 
     if sample_dict == {}:
@@ -174,15 +180,21 @@ def update_config_with_basecalled_path(run_directory, config, basecalled_path):
             config["basecalledPath"] = "%s/%s" %(run_directory, config["basecalledPath"])
 
     if basecalled_path is not None:
+        print("Updating basecalled_path from command line")
         if not basecalled_path.startswith("/"):
             basecalled_path = "%s/%s" %(run_directory, basecalled_path)
         config["basecalledPath"] = basecalled_path
 
-    if config["basecalledPath"] is None or not os.path.exists(basecalled_path):
+    if config["basecalledPath"] is None:
         sys.exit(
             'Error: no valid basecalledPath given. This should be provided either in the run configuration JSON or'
             'using the --basecalledPath parameter. It should be specified either as an absolute path or relative to'
             'the run directory.')
+    elif not os.path.exists(config["basecalledPath"]):
+        sys.exit(
+            'Error: Basecalled path %s is invalid. This should be provided either in the run configuration JSON or'
+            'using the --basecalledPath parameter. It should be specified either as an absolute path or relative to'
+            'the run directory.' %config["basecalledPath"])
 
     return config
 
