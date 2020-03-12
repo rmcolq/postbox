@@ -168,12 +168,9 @@ class TestPostbox(unittest.TestCase):
     def test_update_sample_dict_with_csv_no_file_no_valid_sample_dict(self):
         csv_path = "%s/example_run_directory/idontexist.csv" % data_dir
         sample_dict = {}
-        with self.assertRaises(SystemExit) as out:
-            update_sample_dict_with_csv(csv_path, sample_dict)
-            expected = "Error: no valid sample to barcode map given. This should be provided either in the run " \
-                       "configuration JSON or in a CSV file specified with the --csv parameter, and either given " \
-                       "as an absolute path or relative to the run directory."
-            self.assertEqual(out.exception, expected)
+        sample_dict = update_sample_dict_with_csv(csv_path, sample_dict)
+        expected = {}
+        self.assertEqual(sample_dict, expected)
 
     def test_update_config_with_basecalled_path_no_path_provided(self):
         run_directory = ""

@@ -166,10 +166,10 @@ def update_sample_dict_with_csv(csv_path, sample_dict):
         sample_dict = csv_to_sample_dict(csv_path)
 
     if sample_dict == {}:
-        sys.exit(
-            'Error: no valid sample to barcode map given. This should be provided either in the run configuration JSON '
-            'or in a CSV file specified with the --csv parameter, and either given as an absolute path or relative to'
-            'the run directory.')
+        print(
+            'Warning: no valid sample to barcode map given. Assuming no barcoding. Otherwise this should be provided '
+            'either in the run configuration JSON or in a CSV file specified with the --csv parameter, and either '
+            'given as an absolute path or relative to the run directory.')
 
     return sample_dict
 
@@ -218,7 +218,7 @@ def generate_command(protocol, pipeline, run_directory, run_configuration, basec
     config, sample_dict = load_run_configuration(run_configuration)
     config = update_config_with_basecalled_path(run_directory, config, basecalled_path)
     sample_dict = update_sample_dict_with_csv(csv, sample_dict)
-    dict_string = sample_dict_to_dict_string(sample_dict)
+
 
     command_list = ['snakemake', '--snakefile', pipeline_dict["path"], "--cores", str(threads),
                     "--rerun-incomplete", "--nolock"]
@@ -227,7 +227,10 @@ def generate_command(protocol, pipeline, run_directory, run_configuration, basec
 
     if pipeline_dict["config_file"] is not None:
         command_list.extend(["--configfile", pipeline_dict["config_file"]])
-    command_list.extend(["--config samples=%s" % dict_string, "basecalled_path=\"%s\"" % config["basecalledPath"]])
+    if sample_dict != {}:
+        dict_string = sample_dict_to_dict_string(sample_dict)
+        command_list.extend(["--config samples=%s" % dict_string])
+    command_list.extend(["basecalled_path=\"%s\"" % config["basecalledPath"]])
     if pipeline_dict["config"] is not None:
         command_list.append(pipeline_dict["config"])
     command_list.extend(remainder)
