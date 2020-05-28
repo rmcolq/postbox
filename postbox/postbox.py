@@ -135,7 +135,7 @@ def load_run_configuration(run_configuration_path):
         return config, sample_dict
     with open(run_configuration_path) as json_file:
         config = json.load(json_file)
-        print(config)
+        #print(config)
 
     if "samples" in config:
         for sample in config["samples"]:
