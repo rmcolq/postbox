@@ -260,7 +260,7 @@ def main():
     args = get_arguments()
 
     command = generate_command(args.protocol, args.pipeline, args.run_directory, args.run_configuration,
-                               args.basecalled_path, args.csv, args.threads, args.remainder, args.dry_run)
+                               args.basecalled_path, args.fast5_path, args.csv, args.threads, args.remainder, args.dry_run)
     syscall(command)
 
 if __name__ == '__main__':
