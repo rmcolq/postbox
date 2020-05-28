@@ -37,6 +37,10 @@ def get_arguments():
                            help='Path to the basecalled directory if this information is \
                               not provided in the run_configuration.json file. Path should be relative to the run \
                               directory. Updates the run_configuration information if both are provided')
+    run_group.add_argument('--fast5_path', dest='fast5_path', default=None,
+                           help='Path to the directory containing raw fast5 files. If this information is \
+                              not provided in the run_configuration.json file. Necessary if guppy demultiplexing is used\
+                              after a sequencing run with live basecalling enabled.')
     run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
                           help='Number of cores to run snakemake with')
     run_group.add_argument('-n', '--dry_run', dest='dry_run', action="store_true",
@@ -195,6 +199,20 @@ def update_config_with_basecalled_path(run_directory, config, basecalled_path):
             'Error: Basecalled path %s is invalid. This should be provided either in the run configuration JSON or'
             'using the --basecalledPath parameter. It should be specified either as an absolute path or relative to'
             'the run directory.' %config["basecalledPath"])
+
+    return config
+
+def update_config_with_fast5_path(run_directory, config, fast5_path):
+    if "fast5Path" not in config:
+        config["fast5Path"] = None
+    elif not config["fast5Path"].startswith("/"):
+            config["fast5Path"] = "%s/%s" %(run_directory, config["fast5Path"])
+
+    if fast5_path is not None:
+        print("Updating fast5_path from command line")
+        if not fast5_path.startswith("/"):
+            fast5_path = "%s/%s" %(run_directory, fast5_path)
+        config["fast5Path"] = fast5_path
 
     return config
 
