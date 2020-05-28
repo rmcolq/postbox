@@ -37,6 +37,10 @@ def get_arguments():
                            help='Path to the basecalled directory if this information is \
                               not provided in the run_configuration.json file. Path should be relative to the run \
                               directory. Updates the run_configuration information if both are provided')
+    run_group.add_argument('--fast5_path', dest='fast5_path', default=None,
+                           help='Path to the directory containing raw fast5 files. If this information is \
+                              not provided in the run_configuration.json file. Necessary if guppy demultiplexing is used\
+                              after a sequencing run with live basecalling enabled.')
     run_group.add_argument('-t', '--threads', dest='threads', default=1, type=int,
                           help='Number of cores to run snakemake with')
     run_group.add_argument('-n', '--dry_run', dest='dry_run', action="store_true",
@@ -198,13 +202,27 @@ def update_config_with_basecalled_path(run_directory, config, basecalled_path):
 
     return config
 
+def update_config_with_fast5_path(run_directory, config, fast5_path):
+    if "fast5Path" not in config:
+        config["fast5Path"] = None
+    elif not config["fast5Path"].startswith("/"):
+            config["fast5Path"] = "%s/%s" %(run_directory, config["fast5Path"])
+
+    if fast5_path is not None:
+        print("Updating fast5_path from command line")
+        if not fast5_path.startswith("/"):
+            fast5_path = "%s/%s" %(run_directory, fast5_path)
+        config["fast5Path"] = fast5_path
+
+    return config
+
 def sample_dict_to_dict_string(sample_dict):
     sample_strings = ["%s: [%s]" %(sample, ",".join(sample_dict[sample])) for sample in sample_dict]
     dict_string = "'{%s}'" %", ".join(sample_strings)
     #print(dict_string)
     return dict_string
 
-def generate_command(protocol, pipeline, run_directory, run_configuration, basecalled_path, csv, threads, remainder,
+def generate_command(protocol, pipeline, run_directory, run_configuration, basecalled_path, fast5_path, csv, threads, remainder,
                      dry_run=False):
     pipeline_dict = {
         "path": None,
@@ -217,6 +235,7 @@ def generate_command(protocol, pipeline, run_directory, run_configuration, basec
 
     config, sample_dict = load_run_configuration(run_configuration)
     config = update_config_with_basecalled_path(run_directory, config, basecalled_path)
+    config = update_config_with_fast5_path(run_directory, config, fast5_path)
     sample_dict = update_sample_dict_with_csv(csv, sample_dict)
 
 
