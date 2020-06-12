@@ -205,6 +205,8 @@ def update_config_with_basecalled_path(run_directory, config, basecalled_path):
 def update_config_with_fast5_path(run_directory, config, fast5_path):
     if "fast5Path" not in config:
         config["fast5Path"] = None
+    elif config["fast5Path"].lower() == "none":
+        config["fast5Path"] = None
     elif not config["fast5Path"].startswith("/"):
             config["fast5Path"] = "%s/%s" %(run_directory, config["fast5Path"])
 
