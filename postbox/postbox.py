@@ -252,7 +252,8 @@ def generate_command(protocol, pipeline, run_directory, run_configuration, basec
         dict_string = sample_dict_to_dict_string(sample_dict)
         command_list.extend(["--config samples=%s" % dict_string])
     command_list.extend(["basecalled_path=\"%s\"" % config["basecalledPath"]])
-    command_list.extend(["fast5_path=\"%s\"" % config["fast5Path"]])
+    if pipeline_dict["fast5Path"] is not None:
+        command_list.extend(["fast5_path=\"%s\"" % config["fast5Path"]])
     if pipeline_dict["config"] is not None:
         command_list.append(pipeline_dict["config"])
     command_list.extend(remainder)
